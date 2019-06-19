@@ -17,7 +17,7 @@
   integrity="sha512-tAGcCfR4Sc5ZP5ZoVz0quoZDYX5aCtEm/eu1KhSLj2c9eFrylXZknQYmxUssFaVJKvvc0dJQixhGjG2yXWiV9Q=="
   crossorigin=""></script>
 
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='js/style.css') }}">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
 
 </head>
 
@@ -38,7 +38,8 @@
       <div class="col-md-2">
         <div class="well">
           <h5>Select County:</h5>
-          <select id="selDataset" onchange="optionChanged(this.value)"></select>
+          <!-- <select id="selDataset" onchange="optionChanged(this.value)"></select> -->
+          <select id="selDataset"></select>
         </div>
         <div class="panel panel-primary">
           <div class="panel-heading">

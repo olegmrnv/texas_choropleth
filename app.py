@@ -39,6 +39,16 @@ def index():
     """Return the homepage."""
     return render_template("index.html")
 
+@app.route("/counties")
+def counties():
+    """Return a list of sample names."""
+
+    # Use Pandas to perform the sql query
+    stmt = db.session.query(unemployment).statement
+    df = pd.read_sql_query(stmt, db.session.bind)
+
+    return jsonify(list(df.County))
+
 
 @app.route("/unemp")
 def unemp():

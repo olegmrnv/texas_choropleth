@@ -65,7 +65,7 @@ function resetHighlightINCOME(e) {
 
 function zoomToFeature(e) {
   myMap.fitBounds(e.target.getBounds());
-  d3.select("#sample-metadata").html('<strong>' + e.target.feature.properties.COUNTY + '</strong><br>Personal Income: $' + e.target.feature.properties.INCOME + '<br><br>Unemployment Rate:' + (e.target.feature.properties.UNEMPLOYMENT).toFixed(2) + '%<br><br>Population: '  + e.target.feature.properties.POPULATION);
+  d3.select("#sample-metadata").html('<strong>' + e.target.feature.properties.COUNTY + '</strong><br>Personal Income: $' + e.target.feature.properties.INCOME + '<br><br>Unemployment Rate:' + (e.target.feature.properties.UNEMPLOYMENT).toFixed(2) + '%<br><br>Population: ' + e.target.feature.properties.POPULATION);
   // console.log(e.target.feature.properties.COUNTY);
   // console.log(e);
   // d3.select("#sample-metadata").html("test");
@@ -129,7 +129,12 @@ d3.json(url, function (new_data) {
   var unempURL = "/unemp";
   var incomeURL = "/income";
   var populationURL = "/population";
-
+  var schoolURL = "/school";
+  var markerGroup = [];
+  var schoolLayer;
+  var airURL = "/air_quality";
+  var markerGroupAir = [];
+  var AirLayer;
 
 
   // getting data from RESTfull API for unemployment
@@ -170,105 +175,135 @@ d3.json(url, function (new_data) {
         }
 
 
-        // creating layer for unemployment
-        geojson_unempl = L.choropleth(new_data, {
 
-          valueProperty: "UNEMPLOYMENT",
 
-          // Set color scale
-          scale: ["#ffffb2", "#b10026"],
+        // getting data for schools
+        d3.json(schoolURL, function (schoolData) {    
 
-          // Number of breaks in step range
-          steps: 10,
 
-          // q for quartile, e for equidistant, k for k-means
-          mode: "q",
-          style: {
-            // Border color
-            color: "#fff",
-            weight: 1,
-            fillOpacity: 0.8
-          },
-          onEachFeature: onEachFeatureUNEMP
+          for (var i = 0; i < schoolData.length; i++) {
+            markerGroup.push(
+              L.marker([schoolData[i].LAT, schoolData[i].LONG]).bindPopup("<h4>" + schoolData[i].CampusName + "</h4> <hr>School District: " + schoolData[i].DistrictName + "<br>Overall Grade: " + schoolData[i].OverallGrade + '<br>School Type: ' + schoolData[i].SchoolType + '<br> Zip code: ' + schoolData[i].ZIP)
+            )
+          }
 
-          // function (feature, layer) {
-          //   layer.bindPopup('<h3>' + feature.properties.COUNTY + '</h3><hr>Per Capita Personal Income: $' + feature.properties.INCOME + '<br>Unemployment Rate: ' + (feature.properties.UNEMPLOYMENT).toFixed(2) + '%')
-          // }
+          schoolLayer = L.layerGroup(markerGroup);
 
+
+          d3.json(airURL, function (airData) { 
+            for (var i = 0; i < airData.length; i++) {
+              markerGroupAir.push(
+                L.marker([airData[i].Latitude, airData[i].Longitude]).bindPopup("<h4>" + airData[i].SiteName)
+              )
+            }
+  
+            AirLayer = L.layerGroup(markerGroupAir);
+
+
+
+
+
+          // creating layer for unemployment
+          geojson_unempl = L.choropleth(new_data, {
+
+            valueProperty: "UNEMPLOYMENT",
+
+            // Set color scale
+            scale: ["#ffffb2", "#b10026"],
+
+            // Number of breaks in step range
+            steps: 10,
+
+            // q for quartile, e for equidistant, k for k-means
+            mode: "q",
+            style: {
+              // Border color
+              color: "#fff",
+              weight: 1,
+              fillOpacity: 0.8
+            },
+            onEachFeature: onEachFeatureUNEMP
+
+            // function (feature, layer) {
+            //   layer.bindPopup('<h3>' + feature.properties.COUNTY + '</h3><hr>Per Capita Personal Income: $' + feature.properties.INCOME + '<br>Unemployment Rate: ' + (feature.properties.UNEMPLOYMENT).toFixed(2) + '%')
+            // }
+
+          });
+
+
+
+          // creating layer for income
+          geojson_income = L.choropleth(new_data, {
+
+            valueProperty: "INCOME",
+
+            // Set color scale
+            scale: ["#ffffb2", "#016703"],
+
+            // Number of breaks in step range
+            steps: 10,
+
+            // q for quartile, e for equidistant, k for k-means
+            mode: "q",
+            style: {
+              // Border color
+              color: "#fff",
+              weight: 1,
+              fillOpacity: 0.8
+            },
+            onEachFeature: onEachFeatureINCOME
+            // onEachFeature: function (feature, layer) {          
+            //   layer.bindPopup('<h3>' + feature.properties.COUNTY + '</h3><hr>Per Capita Personal Income: $' + feature.properties.INCOME + '<br>Unemployment Rate: ' + (feature.properties.UNEMPLOYMENT).toFixed(2) + '%')
+            // }
+
+          }).addTo(myMap);
+
+
+
+
+
+          // adding few basemaps
+          var baseMaps = {
+            "Streets map": mapbox_streets,
+            "Light map": light,
+            "Outdoors": outdoors
+          };
+
+          // Overlays that may be toggled on or off
+          var overlayMaps = {
+            "Unemployment": geojson_unempl,
+            "Income": geojson_income,
+            "Best Schools": schoolLayer,
+            "Air Stations": AirLayer
+          };
+
+
+          // Pass our map layers into our layer control
+          // Add the layer control to the map
+
+
+
+
+          info.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+            this.update();
+            return this._div;
+          };
+
+          info.update = function (props) {
+            this._div.innerHTML = '<h4>Texas County Info</h4>' + (props ?
+              '<b>' + props.COUNTY + '</b><br />Personal Income: $' + props.INCOME + '<br>Unemployment Rate:' + (props.UNEMPLOYMENT).toFixed(2) + '%' + '<br>Population:' + props.POPULATION
+              : 'Hover over a county');
+          };
+
+          info.addTo(myMap);
+
+          L.control.layers(baseMaps, overlayMaps, { collapsed: false, position: 'bottomright' }).addTo(myMap);
+// closing d3 call for air 
         });
-
-
-
-        // creating layer for income
-        geojson_income = L.choropleth(new_data, {
-
-          valueProperty: "INCOME",
-
-          // Set color scale
-          scale: ["#ffffb2", "#016703"],
-
-          // Number of breaks in step range
-          steps: 10,
-
-          // q for quartile, e for equidistant, k for k-means
-          mode: "q",
-          style: {
-            // Border color
-            color: "#fff",
-            weight: 1,
-            fillOpacity: 0.8
-          },
-          onEachFeature: onEachFeatureINCOME
-          // onEachFeature: function (feature, layer) {          
-          //   layer.bindPopup('<h3>' + feature.properties.COUNTY + '</h3><hr>Per Capita Personal Income: $' + feature.properties.INCOME + '<br>Unemployment Rate: ' + (feature.properties.UNEMPLOYMENT).toFixed(2) + '%')
-          // }
-
-        }).addTo(myMap);
-
-
-
-
-
-        // adding few basemaps
-        var baseMaps = {
-          "Streets map": mapbox_streets,
-          "Light map": light,
-          "Outdoors": outdoors
-        };
-
-        // Overlays that may be toggled on or off
-        var overlayMaps = {
-          "Unemployment": geojson_unempl,
-          "Income": geojson_income
-        };
-
-
-        // Pass our map layers into our layer control
-        // Add the layer control to the map
-
-
-
-
-        info.onAdd = function (map) {
-          this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
-          this.update();
-          return this._div;
-        };
-
-        info.update = function (props) {
-          this._div.innerHTML = '<h4>Texas County Info</h4>' + (props ?
-            '<b>' + props.COUNTY + '</b><br />Personal Income: $' + props.INCOME + '<br>Unemployment Rate:' + (props.UNEMPLOYMENT).toFixed(2) + '%' + '<br>Population:' + props.POPULATION
-            : 'Hover over a county');
-        };
-
-        info.addTo(myMap);
-
-        L.control.layers(baseMaps, overlayMaps, { collapsed: false, position: 'bottomright' }).addTo(myMap);
-
-
-
-
-        //closing d3 call to inpopulation 
+          // closing d3 call for schools
+        });
+        //closing d3 call to population 
       });
 
 

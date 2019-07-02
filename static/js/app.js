@@ -116,7 +116,7 @@ d3.json(url, function(new_data) {
     var light = L.tileLayer("https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}", {
         attribution: "Map data &copy; <a href=\"https://www.openstreetmap.org/\">OpenStreetMap</a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, Imagery © <a href=\"https://www.mapbox.com/\">Mapbox</a>",
         maxZoom: 20,
-        id: "mapbox.high-contrast",
+        id: "mapbox.light",
         accessToken: API_KEY
     }).addTo(myMap);
 
@@ -283,7 +283,7 @@ d3.json(url, function(new_data) {
                         // adding few basemaps
                         var baseMaps = {
                             "Satellite": mapbox_streets,
-                            "High-Contrast": light,
+                            "Light map": light,
                             "Outdoors": outdoors
                         };
 
